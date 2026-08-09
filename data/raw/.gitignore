@@ -36,4 +36,5 @@ monitoring/reports/*.html
 .DS_Store
 .vscode/
 .idea/
-*.log
+*.loggit
+/telco_churn.csv
