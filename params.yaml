@@ -1,0 +1,44 @@
+# ══════════════════════════════════════════════════════════════════════
+#  params.yaml — Versioned hyperparameters for the DVC training pipeline
+#
+#  HOW IT WORKS:
+#    - dvc repro reads these values and passes them to src/train.py
+#    - Changing any value here → dvc repro detects it → re-runs training
+#    - Git tracks this file → every experiment is reproducible forever
+#
+#  UPDATE THESE values with your best run from Session 2 (MLflow UI).
+# ══════════════════════════════════════════════════════════════════════
+
+train:
+  # ── Data ────────────────────────────────────────────────────────────
+  data_path: data/raw/telco_churn.csv
+  test_size: 0.2
+  random_state: 42
+
+  # ── XGBoost Hyperparameters ─────────────────────────────────────────
+  # Update these with the best values you found in your MLflow experiments
+  n_estimators: 300
+  max_depth: 8
+  learning_rate: 0.05
+  subsample: 0.8
+  colsample_bytree: 0.8
+  min_child_weight: 1
+  gamma: 0.0
+
+  # ── MLflow Experiment ───────────────────────────────────────────────
+  experiment_name: churn_prediction
+  model_name: churn-prediction-xgboost   # name in the Model Registry
+
+evaluate:
+  # ── Validation Gate Thresholds ──────────────────────────────────────
+  # A model MUST exceed ALL of these to be registered in the Registry.
+  # Lower = more lenient. Higher = stricter quality bar.
+  min_accuracy: 0.78
+  min_auc_roc:  0.80
+  min_f1_score: 0.55
+
+monitoring:
+  # ── Evidently Drift Detection ───────────────────────────────────────
+  # Fraction of features that must drift to trigger a retraining alert.
+  drift_threshold: 0.30       # 30% of features drifting = retrain
+  current_sample_size: 500    # rows of "current" production data to test

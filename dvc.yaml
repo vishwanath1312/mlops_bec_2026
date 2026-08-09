@@ -1,0 +1,78 @@
+# ══════════════════════════════════════════════════════════════════════
+#  dvc.yaml — Reproducible ML Pipeline (Session 3)
+#
+#  RUN THE PIPELINE:   dvc repro
+#  CHECK STATUS:       dvc status
+#  SHOW METRICS:       dvc metrics show
+#  COMPARE RUNS:       dvc metrics diff
+#
+#  HOW IT WORKS:
+#    Each "stage" lists:
+#      cmd   → the shell command to run
+#      deps  → files/scripts this stage depends on
+#      params→ values from params.yaml this stage uses
+#      outs  → output files produced (cached by DVC)
+#      metrics → metric files tracked by DVC (not cached)
+#
+#    DVC builds a DAG from dependencies. If any dep or param changes,
+#    only the affected downstream stages re-run. Everything else is
+#    served from cache — making subsequent runs almost instant.
+# ══════════════════════════════════════════════════════════════════════
+
+stages:
+
+  # ── Stage 1: Train ──────────────────────────────────────────────────
+  train:
+    cmd: >-
+      python src/train.py
+      --data_path ${train.data_path}
+      --n_estimators ${train.n_estimators}
+      --max_depth ${train.max_depth}
+      --learning_rate ${train.learning_rate}
+      --subsample ${train.subsample}
+      --colsample_bytree ${train.colsample_bytree}
+      --min_child_weight ${train.min_child_weight}
+      --gamma ${train.gamma}
+      --test_size ${train.test_size}
+      --random_state ${train.random_state}
+      --experiment_name ${train.experiment_name}
+    deps:
+      - src/train.py
+      - data/raw/telco_churn.csv
+    params:
+      - train.n_estimators
+      - train.max_depth
+      - train.learning_rate
+      - train.subsample
+      - train.colsample_bytree
+      - train.min_child_weight
+      - train.gamma
+      - train.test_size
+      - train.random_state
+      - train.experiment_name
+    outs:
+      - models/best_model.pkl       # trained model artifact (DVC-cached)
+    metrics:
+      - metrics/scores.json:
+          cache: false              # stored in Git, not DVC remote
+
+  # ── Stage 2: Evaluate ───────────────────────────────────────────────
+  evaluate:
+    cmd: >-
+      python src/evaluate.py
+      --data_path ${train.data_path}
+      --model_path models/best_model.pkl
+      --min_accuracy ${evaluate.min_accuracy}
+      --min_auc_roc ${evaluate.min_auc_roc}
+      --min_f1_score ${evaluate.min_f1_score}
+    deps:
+      - src/evaluate.py
+      - models/best_model.pkl
+      - data/raw/telco_churn.csv
+    params:
+      - evaluate.min_accuracy
+      - evaluate.min_auc_roc
+      - evaluate.min_f1_score
+    metrics:
+      - metrics/eval_scores.json:
+          cache: false
